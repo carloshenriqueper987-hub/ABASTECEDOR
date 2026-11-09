@@ -1,0 +1,631 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Abastece Fácil - Controle de Abastecimento</title>
+  <link rel="manifest" href="data:application/json,{%22name%22:%22Abastece%20F%C3%A1cil%22,%22short_name%22:%22AbasteceF%C3%A1cil%22,%22start_url%22:%22.%22,%22display%22:%22standalone%22,%22background_color%22:%22%23f8fafc%22,%22theme_color%22:%22%231e3a8a%22}">
+  <style>
+    :root {
+      --primary: #1e3a8a;
+      --primary-hover: #1e40af;
+      --accent: #f59e0b;
+      --bg: #f8fafc;
+      --card-bg: #ffffff;
+      --text: #0f172a;
+      --text-muted: #64748b;
+      --border: #e2e8f0;
+      --danger: #ef4444;
+      --success: #10b981;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; }
+    body { background-color: var(--bg); color: var(--text); padding-bottom: 50px; min-height: 100vh; }
+
+    /* Header & Top Navigation */
+    header { background-color: var(--primary); color: white; padding: 12px 16px; position: sticky; top: 0; z-index: 100; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); }
+    .header-top { display: flex; justify-content: space-between; align-items: center; max-width: 1200px; margin: 0 auto 10px; }
+    .brand { font-size: 1.3rem; font-weight: 800; display: flex; align-items: center; gap: 8px; }
+    .user-badge { background: rgba(255,255,255,0.15); padding: 6px 12px; border-radius: 20px; font-size: 0.85rem; font-weight: 600; cursor: pointer; border: 1px solid rgba(255,255,255,0.2); transition: 0.2s; }
+    .user-badge:hover { background: rgba(255,255,255,0.25); }
+
+    /* Sector Tabs Bar */
+    .nav-tabs-wrapper { overflow-x: auto; max-width: 1200px; margin: 0 auto; scrollbar-width: none; }
+    .nav-tabs-wrapper::-webkit-scrollbar { display: none; }
+    .nav-tabs { display: flex; gap: 6px; padding-bottom: 4px; }
+    .tab-btn { background: rgba(255,255,255,0.1); color: white; border: none; padding: 8px 14px; border-radius: 8px; font-size: 0.88rem; font-weight: 600; cursor: pointer; white-space: nowrap; display: flex; align-items: center; gap: 6px; transition: 0.2s; }
+    .tab-btn:hover { background: rgba(255,255,255,0.2); }
+    .tab-btn.active { background: white; color: var(--primary); font-weight: 700; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+
+    /* Main Container */
+    main { max-width: 1200px; margin: 20px auto; padding: 0 16px; }
+
+    /* Search Bar Centralized */
+    .search-hero { background: white; padding: 20px; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.05); margin-bottom: 24px; text-align: center; border: 1px solid var(--border); }
+    .search-hero h2 { font-size: 1.1rem; color: var(--text-muted); margin-bottom: 12px; font-weight: 600; }
+    .search-input-wrapper { position: relative; max-width: 600px; margin: 0 auto; }
+    .search-input { width: 100%; padding: 14px 44px 14px 16px; font-size: 1.1rem; border: 2px solid var(--border); border-radius: 10px; outline: none; transition: 0.2s; background: var(--bg); }
+    .search-input:focus { border-color: var(--primary); background: white; box-shadow: 0 0 0 4px rgba(30, 58, 138, 0.1); }
+    .search-clear { position: absolute; right: 12px; top: 50%; transform: translateY(-50%); background: none; border: none; font-size: 1.2rem; color: var(--text-muted); cursor: pointer; display: none; }
+
+    /* Buttons */
+    .btn { padding: 10px 16px; border-radius: 8px; font-weight: 600; font-size: 0.9rem; cursor: pointer; border: none; display: inline-flex; align-items: center; gap: 6px; transition: 0.2s; }
+    .btn-primary { background: var(--primary); color: white; }
+    .btn-primary:hover { background: var(--primary-hover); }
+    .btn-accent { background: var(--accent); color: #000; font-weight: 700; }
+    .btn-secondary { background: #e2e8f0; color: var(--text); }
+    .btn-secondary:hover { background: #cbd5e1; }
+    .btn-danger { background: #fee2e2; color: var(--danger); }
+    .btn-danger:hover { background: #fca5a5; }
+
+    /* Footwear Cards */
+    .models-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 16px; }
+    .card { background: white; border-radius: 12px; border: 1px solid var(--border); padding: 18px; box-shadow: 0 2px 4px rgba(0,0,0,0.02); transition: transform 0.2s, box-shadow 0.2s; }
+    .card:hover { transform: translateY(-2px); box-shadow: 0 6px 12px rgba(0,0,0,0.06); }
+    .card-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 12px; border-bottom: 1px solid var(--border); padding-bottom: 10px; }
+    .card-title { font-size: 1.2rem; font-weight: 700; color: var(--primary); }
+    .card-badge { background: #eff6ff; color: var(--primary); font-size: 0.8rem; font-weight: 700; padding: 4px 8px; border-radius: 6px; }
+
+    /* Components & Specs */
+    .section-tag { font-size: 0.75rem; text-transform: uppercase; font-weight: 700; color: var(--text-muted); margin-top: 12px; margin-bottom: 6px; display: block; }
+    .item-list { list-style: none; display: flex; flex-direction: column; gap: 6px; }
+    .item-row { background: var(--bg); padding: 8px 10px; border-radius: 6px; font-size: 0.88rem; display: flex; justify-content: space-between; align-items: center; border-left: 3px solid var(--primary); }
+    .item-qty { font-weight: 700; background: white; padding: 2px 6px; border-radius: 4px; border: 1px solid var(--border); }
+
+    /* Warning Notice Box */
+    .warning-box { background: #fffbeb; border: 1px solid #fde68a; border-left: 4px solid var(--accent); padding: 10px; border-radius: 8px; margin-top: 12px; font-size: 0.82rem; color: #92400e; display: flex; gap: 8px; align-items: center; }
+
+    /* Modal Styles */
+    .modal-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); display: none; align-items: center; justify-content: center; z-index: 1000; padding: 16px; }
+    .modal-overlay.active { display: flex; }
+    .modal { background: white; border-radius: 12px; max-width: 600px; width: 100%; max-height: 90vh; overflow-y: auto; padding: 24px; box-shadow: 0 20px 25px -5px rgba(0,0,0,0.1); }
+    .modal-title { font-size: 1.25rem; font-weight: 700; margin-bottom: 16px; color: var(--primary); }
+    .form-group { margin-bottom: 14px; }
+    .form-group label { display: block; font-size: 0.88rem; font-weight: 600; margin-bottom: 4px; color: var(--text); }
+    .form-control { width: 100%; padding: 10px; border: 1px solid var(--border); border-radius: 6px; font-size: 0.95rem; }
+
+    /* Sector Info Cards */
+    .sector-info-card { background: white; padding: 20px; border-radius: 12px; border: 1px solid var(--border); margin-bottom: 16px; box-shadow: 0 2px 4px rgba(0,0,0,0.02); }
+    .sector-info-card h3 { color: var(--primary); font-size: 1.1rem; margin-bottom: 8px; display: flex; align-items: center; gap: 8px; }
+  </style>
+</head>
+<body>
+
+  <header>
+    <div class="header-top">
+      <div class="brand">👟 Abastece Fácil</div>
+      <div class="user-badge" id="userBadge" onclick="openLoginModal()">👤 Abastecedor (Consulta)</div>
+    </div>
+    <div class="nav-tabs-wrapper">
+      <div class="nav-tabs" id="navTabs">
+        <!-- Rendered dynamically -->
+      </div>
+    </div>
+  </header>
+
+  <main>
+    <!-- Central Search Section -->
+    <div class="search-hero" id="searchHero">
+      <h2>Em busca do modelo...</h2>
+      <div class="search-input-wrapper">
+        <input type="text" id="searchInput" class="search-input" placeholder="Digite o nome ou número (ex: Corre 5, Beira Rio, 3540)..." oninput="onSearchInput(this.value)">
+        <button class="search-clear" id="searchClearBtn" onclick="clearSearch()">✕</button>
+      </div>
+    </div>
+
+    <!-- Active Tab Content Area -->
+    <div id="tabContent"></div>
+  </main>
+
+  <!-- Login/Auth Modal -->
+  <div class="modal-overlay" id="loginModal">
+    <div class="modal" style="max-width: 380px;">
+      <h3 class="modal-title">Acesso Restrito</h3>
+      <p style="font-size:0.88rem; color:var(--text-muted); margin-bottom:14px;">Digite a senha correspondente para liberar edições.</p>
+      <div class="form-group">
+        <label>Senha de Acesso:</label>
+        <input type="password" id="loginPasswordInput" class="form-control" placeholder="Digite sua senha...">
+      </div>
+      <div style="display:flex; justify-content:flex-end; gap:8px; margin-top:20px;">
+        <button class="btn btn-secondary" onclick="closeLoginModal()">Cancelar</button>
+        <button class="btn btn-primary" onclick="submitPassword()">Entrar</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Add/Edit Model Modal -->
+  <div class="modal-overlay" id="modelModal">
+    <div class="modal">
+      <h3 class="modal-title" id="modelModalTitle">Cadastrar Modelo</h3>
+      <form id="modelForm" onsubmit="saveModel(event)">
+        <input type="hidden" id="modelId">
+        <div class="form-group">
+          <label>Nome do Calçado / Modelo *</label>
+          <input type="text" id="modelName" class="form-control" placeholder="ex: Olympus Speed 2.0" required>
+        </div>
+        <div class="form-group">
+          <label>Numerações Atendidas *</label>
+          <input type="text" id="modelSizes" class="form-control" placeholder="ex: 35 ao 44" required>
+        </div>
+        <div class="form-group">
+          <label>Lote / Ordem de Produção</label>
+          <input type="text" id="modelBatch" class="form-control" placeholder="ex: Lote 402B">
+        </div>
+        
+        <h4 style="font-size:0.95rem; margin:16px 0 8px; color:var(--primary);">Componentes e Materiais</h4>
+        <div id="componentsContainer"></div>
+        <button type="button" class="btn btn-secondary" style="margin-top:8px; width:100%;" onclick="addComponentInputRow()">+ Adicionar Componente</button>
+
+        <h4 style="font-size:0.95rem; margin:16px 0 8px; color:var(--primary);">Matrizes Necessárias</h4>
+        <div class="form-group">
+          <input type="text" id="modelMatrices" class="form-control" placeholder="ex: Matriz Recorte #12, Matriz Frequência Vista #04">
+        </div>
+
+        <div class="form-group">
+          <label>Observações Adicionais</label>
+          <textarea id="modelNotes" class="form-control" rows="2" placeholder="Observações específicas para os abastecedores..."></textarea>
+        </div>
+
+        <div style="display:flex; justify-content:flex-end; gap:8px; margin-top:20px;">
+          <button type="button" class="btn btn-secondary" onclick="closeModelModal()">Cancelar</button>
+          <button type="submit" class="btn btn-primary">Salvar Modelo</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Add Sector Modal -->
+  <div class="modal-overlay" id="sectorModal">
+    <div class="modal" style="max-width: 440px;">
+      <h3 class="modal-title">Adicionar Nova Ferramenta / Setor</h3>
+      <form onsubmit="saveNewSector(event)">
+        <div class="form-group">
+          <label>Nome do Setor / Ferramenta *</label>
+          <input type="text" id="sectorNameInput" class="form-control" placeholder="ex: Corte, Almoxarifado, Qualidade" required>
+        </div>
+        <div class="form-group">
+          <label>Descrição e Orientações</label>
+          <textarea id="sectorDescInput" class="form-control" rows="3" placeholder="Explicação de como funciona este setor..."></textarea>
+        </div>
+        <div style="display:flex; justify-content:flex-end; gap:8px; margin-top:20px;">
+          <button type="button" class="btn btn-secondary" onclick="closeSectorModal()">Cancelar</button>
+          <button type="submit" class="btn btn-primary">Criar Setor</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <script>
+    // State Management
+    let currentUserRole = 'abastecedor'; // 'abastecedor', 'autorizado', 'admin'
+    let activeTab = 'modelos';
+    let searchQuery = '';
+
+    let passwords = JSON.parse(localStorage.getItem('af_passwords')) || {
+      admin: 'admin123',
+      autorizado: 'autorizado123'
+    };
+
+    let sectors = JSON.parse(localStorage.getItem('af_sectors')) || [
+      { id: 'modelos', name: 'Modelos', icon: '👟', desc: 'Consulta geral de todos os modelos de calçados cadastrados.' },
+      { id: 'frequencia', name: 'Frequência', icon: '⚙️', desc: 'Separação e organização dos componentes para montagem da frequência.' },
+      { id: 'arprep', name: 'ARPREP', icon: '📦', desc: 'Armazenamento central de materiais recebidos da Preparação e Serigrafia.' },
+      { id: 'serigrafia', name: 'Serigrafia', icon: '🎨', desc: 'Aplicação de estampas, tintas e detalhes visuais nos materiais.' },
+      { id: 'preparacao', name: 'Preparação', icon: '✂️', desc: 'Setor de preparação de gáspeas e montagem inicial antes do ARPREP.' },
+      { id: 'matrizes', name: 'Matrizes', icon: '🛠️', desc: 'Identificação de matrizes de corte e frequência necessárias por modelo.' },
+      { id: 'configuracoes', name: 'Configurações', icon: '⚙️', desc: 'Gerenciamento de permissões, novos setores e cópia de segurança.' }
+    ];
+
+    let models = JSON.parse(localStorage.getItem('af_models')) || [
+      {
+        id: '1',
+        name: 'Olympus Speed 5.0',
+        sizes: '37 ao 43',
+        batch: 'Lote 102A',
+        matrices: 'Matriz Frequência V-02, Matriz Recorte Vista #4',
+        notes: 'Verificar alinhamento da placa da logo no material refletivo.',
+        components: [
+          { name: 'Placa da Vista Refletiva', qty: '1 par/par', sector: 'frequencia' },
+          { name: 'Placa da Logo Lateral', qty: '2 un/par', sector: 'frequencia' },
+          { name: 'Gáspea Marginada c/ Silk', qty: '1 par/par', sector: 'arprep' },
+          { name: 'Etiqueta de Lingueta', qty: '1 par/par', sector: 'serigrafia' }
+        ]
+      },
+      {
+        id: '2',
+        name: 'Beira Rio Casual 3540',
+        sizes: '34 ao 39',
+        batch: 'Lote 88',
+        matrices: 'Matriz Recorte Salto #1',
+        notes: 'Cuidado extra com silk dourado na serigrafia.',
+        components: [
+          { name: 'Aplique Serigrafado Dourado', qty: '2 un/par', sector: 'serigrafia' },
+          { name: 'Gáspea Preparada', qty: '1 par/par', sector: 'preparacao' }
+        ]
+      }
+    ];
+
+    const numberMap = {
+      'um': '1', 'dois': '2', 'tres': '3', 'três': '3', 'quatro': '4',
+      'cinco': '5', 'seis': '6', 'sete': '7', 'oito': '8', 'nove': '9', 'dez': '10'
+    };
+
+    function saveState() {
+      localStorage.setItem('af_models', JSON.stringify(models));
+      localStorage.setItem('af_sectors', JSON.stringify(sectors));
+      localStorage.setItem('af_passwords', JSON.stringify(passwords));
+    }
+
+    // Tab Render
+    function renderTabs() {
+      const container = document.getElementById('navTabs');
+      container.innerHTML = sectors.map(sec => `
+        <button class="tab-btn ${activeTab === sec.id ? 'active' : ''}" onclick="switchTab('${sec.id}')">
+          <span>${sec.icon || '📌'}</span> ${sec.name}
+        </button>
+      `).join('');
+    }
+
+    function switchTab(tabId) {
+      activeTab = tabId;
+      renderTabs();
+      renderContent();
+    }
+
+    // Number normalization search
+    function normalizeSearchText(text) {
+      let str = text.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+      Object.keys(numberMap).forEach(key => {
+        str = str.replace(new RegExp('\\b' + key + '\\b', 'g'), numberMap[key]);
+      });
+      return str;
+    }
+
+    function onSearchInput(val) {
+      searchQuery = val;
+      document.getElementById('searchClearBtn').style.display = val ? 'block' : 'none';
+      if (activeTab === 'modelos') renderContent();
+    }
+
+    function clearSearch() {
+      document.getElementById('searchInput').value = '';
+      onSearchInput('');
+    }
+
+    // Main Content Renderer
+    function renderContent() {
+      const container = document.getElementById('tabContent');
+      const searchHero = document.getElementById('searchHero');
+
+      // Show search bar only on Models tab
+      searchHero.style.display = (activeTab === 'modelos') ? 'block' : 'none';
+
+      const sectorObj = sectors.find(s => s.id === activeTab);
+
+      if (activeTab === 'modelos') {
+        renderModelsView(container);
+      } else if (activeTab === 'configuracoes') {
+        renderConfigView(container);
+      } else {
+        renderSectorView(container, sectorObj);
+      }
+    }
+
+    function renderModelsView(container) {
+      const q = normalizeSearchText(searchQuery);
+      const filtered = models.filter(m => {
+        const nameNorm = normalizeSearchText(m.name);
+        const sizesNorm = normalizeSearchText(m.sizes);
+        const batchNorm = normalizeSearchText(m.batch || '');
+        return nameNorm.includes(q) || sizesNorm.includes(q) || batchNorm.includes(q);
+      });
+
+      let adminActionsHtml = '';
+      if (currentUserRole === 'admin' || currentUserRole === 'autorizado') {
+        adminActionsHtml = `
+          <div style="margin-bottom:16px; display:flex; justify-content:flex-end;">
+            <button class="btn btn-primary" onclick="openModelModal()">+ Adicionar Novo Modelo</button>
+          </div>
+        `;
+      }
+
+      if (filtered.length === 0) {
+        container.innerHTML = adminActionsHtml + `
+          <div style="text-align:center; padding:40px; background:white; border-radius:12px; border:1px solid var(--border);">
+            <p style="color:var(--text-muted); font-size:1.1rem;">Nenhum modelo encontrado para "${searchQuery}".</p>
+          </div>
+        `;
+        return;
+      }
+
+      container.innerHTML = adminActionsHtml + `
+        <div class="models-grid">
+          ${filtered.map(m => `
+            <div class="card">
+              <div class="card-header">
+                <div>
+                  <div class="card-title">${m.name}</div>
+                  <div style="font-size:0.85rem; color:var(--text-muted); margin-top:2px;">
+                    📏 Números: <strong>${m.sizes}</strong> ${m.batch ? `| 📦 ${m.batch}` : ''}
+                  </div>
+                </div>
+                ${currentUserRole !== 'abastecedor' ? `
+                  <button class="btn btn-secondary" style="padding:4px 8px; font-size:0.8rem;" onclick="editModel('${m.id}')">✏️ Editar</button>
+                ` : ''}
+              </div>
+
+              <span class="section-tag">Componentes Necessários</span>
+              <ul class="item-list">
+                ${m.components.map(c => `
+                  <li class="item-row">
+                    <span>${c.name}</span>
+                    <span class="item-qty">${c.qty}</span>
+                  </li>
+                `).join('')}
+              </ul>
+
+              ${m.matrices ? `
+                <span class="section-tag">Matrizes</span>
+                <div style="font-size:0.88rem; background:#f1f5f9; padding:8px; border-radius:6px; color:#334155;">
+                  🛠️ ${m.matrices}
+                </div>
+              ` : ''}
+
+              <div class="warning-box">
+                ⚠️ <strong>Atenção à Numeração:</strong> Nunca misture peças de tamanhos diferentes (ex: #35 com #40).
+              </div>
+
+              ${m.notes ? `
+                <div style="font-size:0.82rem; color:var(--text-muted); margin-top:10px; font-style:italic;">
+                  📝 ${m.notes}
+                </div>
+              ` : ''}
+            </div>
+          `).join('')}
+        </div>
+      `;
+    }
+
+    function renderSectorView(container, sector) {
+      if (!sector) return;
+      
+      // Filter components specific to this sector
+      const sectorModels = models.map(m => ({
+        ...m,
+        sectorComponents: m.components.filter(c => c.sector === sector.id)
+      })).filter(m => sectorModelsHasItems(m, sector.id));
+
+      container.innerHTML = `
+        <div class="sector-info-card">
+          <h3>${sector.icon || '📌'} Setor: ${sector.name}</h3>
+          <p style="font-size:0.95rem; color:var(--text-muted); line-height:1.5;">${sector.desc || 'Sem descrição cadastrada.'}</p>
+        </div>
+
+        <h4 style="font-size:1.1rem; color:var(--primary); margin:20px 0 12px;">Componentes para Retirada neste Setor</h4>
+
+        ${sectorModels.length === 0 ? `
+          <div style="padding:30px; background:white; border-radius:12px; text-align:center; color:var(--text-muted);">
+            Nenhum componente vinculado diretamente a este setor nos modelos atuais.
+          </div>
+        ` : `
+          <div class="models-grid">
+            ${sectorModels.map(m => `
+              <div class="card">
+                <div class="card-header">
+                  <div>
+                    <div class="card-title">${m.name}</div>
+                    <div style="font-size:0.85rem; color:var(--text-muted);">Numeração: ${m.sizes}</div>
+                  </div>
+                </div>
+                <ul class="item-list">
+                  ${(sector.id === 'matrizes' ? [{name: m.matrices, qty: 'Matriz'}] : m.sectorComponents).map(c => `
+                    <li class="item-row">
+                      <span>${c.name}</span>
+                      <span class="item-qty">${c.qty}</span>
+                    </li>
+                  `).join('')}
+                </ul>
+              </div>
+            `).join('')}
+          </div>
+        `}
+      `;
+    }
+
+    function sectorModelsHasItems(m, sectorId) {
+      if (sectorId === 'matrizes') return !!m.matrices;
+      return m.sectorComponents && m.sectorComponents.length > 0;
+    }
+
+    function renderConfigView(container) {
+      container.innerHTML = `
+        <div class="sector-info-card">
+          <h3>⚙️ Painel de Administração & Configurações</h3>
+          <p style="color:var(--text-muted); font-size:0.9rem; margin-bottom:16px;">
+            Gerencie o sistema, edite dados e crie novas abas de ferramentas de trabalho.
+          </p>
+
+          ${currentUserRole === 'admin' ? `
+            <div style="margin-bottom:24px;">
+              <button class="btn btn-primary" onclick="openSectorModal()">+ Adicionar Novo Setor / Ferramenta</button>
+            </div>
+
+            <h4 style="font-size:1rem; margin-bottom:10px;">Setores Cadastrados</h4>
+            <div style="display:flex; flex-direction:column; gap:8px; margin-bottom:24px;">
+              ${sectors.map(s => `
+                <div style="display:flex; justify-content:space-between; align-items:center; background:var(--bg); padding:10px 14px; border-radius:8px;">
+                  <div>
+                    <strong>${s.icon || '📌'} ${s.name}</strong>
+                    <div style="font-size:0.8rem; color:var(--text-muted);">${s.desc}</div>
+                  </div>
+                  ${!['modelos','configuracoes'].includes(s.id) ? `
+                    <button class="btn btn-danger" style="padding:4px 8px; font-size:0.75rem;" onclick="deleteSector('${s.id}')">Excluir</button>
+                  ` : '<span style="font-size:0.75rem; color:var(--text-muted);">Fixo</span>'}
+                </div>
+              `).join('')}
+            </div>
+
+            <h4 style="font-size:1rem; margin-bottom:10px;">Alterar Senhas do Sistema</h4>
+            <div style="max-width:300px; display:flex; flex-direction:column; gap:10px;">
+              <input type="text" id="newAdminPass" class="form-control" placeholder="Nova Senha Admin" value="${passwords.admin}">
+              <input type="text" id="newAuthPass" class="form-control" placeholder="Nova Senha Autorizado" value="${passwords.autorizado}">
+              <button class="btn btn-secondary" onclick="updatePasswords()">Atualizar Senhas</button>
+            </div>
+          ` : `
+            <div style="padding:16px; background:#f1f5f9; border-radius:8px; color:var(--text-muted);">
+              🔒 Você está no modo <strong>${currentUserRole.toUpperCase()}</strong>. Entre com a senha de Administrador no topo para desbloquear todas as alterações.
+            </div>
+          `}
+        </div>
+      `;
+    }
+
+    // Modal & Form Handlers
+    function openLoginModal() {
+      document.getElementById('loginModal').classList.add('active');
+    }
+
+    function closeLoginModal() {
+      document.getElementById('loginModal').classList.remove('active');
+      document.getElementById('loginPasswordInput').value = '';
+    }
+
+    function submitPassword() {
+      const pass = document.getElementById('loginPasswordInput').value.trim();
+      if (pass === passwords.admin) {
+        currentUserRole = 'admin';
+        document.getElementById('userBadge').innerText = '👑 Administrador';
+        closeLoginModal();
+        renderContent();
+      } else if (pass === passwords.autorizado) {
+        currentUserRole = 'autorizado';
+        document.getElementById('userBadge').innerText = '✏️ Usuário Autorizado';
+        closeLoginModal();
+        renderContent();
+      } else {
+        alert('Senha incorreta!');
+      }
+    }
+
+    function openModelModal(modelId = null) {
+      document.getElementById('modelModal').classList.add('active');
+      const container = document.getElementById('componentsContainer');
+      container.innerHTML = '';
+
+      if (modelId) {
+        const m = models.find(x => x.id === modelId);
+        document.getElementById('modelId').value = m.id;
+        document.getElementById('modelName').value = m.name;
+        document.getElementById('modelSizes').value = m.sizes;
+        document.getElementById('modelBatch').value = m.batch || '';
+        document.getElementById('modelMatrices').value = m.matrices || '';
+        document.getElementById('modelNotes').value = m.notes || '';
+        
+        m.components.forEach(c => addComponentInputRow(c.name, c.qty, c.sector));
+      } else {
+        document.getElementById('modelForm').reset();
+        document.getElementById('modelId').value = '';
+        addComponentInputRow(); // Default row
+      }
+    }
+
+    function closeModelModal() {
+      document.getElementById('modelModal').classList.remove('active');
+    }
+
+    function addComponentInputRow(name = '', qty = '', sector = 'frequencia') {
+      const container = document.getElementById('componentsContainer');
+      const div = document.createElement('div');
+      div.className = 'component-row';
+      div.style.cssText = 'display:flex; gap:6px; margin-bottom:8px;';
+      div.innerHTML = `
+        <input type="text" placeholder="Nome da peça" value="${name}" class="form-control comp-name" style="flex:2;" required>
+        <input type="text" placeholder="Qtd" value="${qty}" class="form-control comp-qty" style="flex:1;" required>
+        <select class="form-control comp-sector" style="flex:1.5;">
+          ${sectors.filter(s => !['modelos','configuracoes'].includes(s.id)).map(s => `
+            <option value="${s.id}" ${s.id === sector ? 'selected' : ''}>${s.name}</option>
+          `).join('')}
+        </select>
+        <button type="button" class="btn btn-danger" onclick="this.parentElement.remove()">✕</button>
+      `;
+      container.appendChild(div);
+    }
+
+    function saveModel(e) {
+      e.preventDefault();
+      const id = document.getElementById('modelId').value || Date.now().toString();
+      const name = document.getElementById('modelName').value;
+      const sizes = document.getElementById('modelSizes').value;
+      const batch = document.getElementById('modelBatch').value;
+      const matrices = document.getElementById('modelMatrices').value;
+      const notes = document.getElementById('modelNotes').value;
+
+      const compRows = document.querySelectorAll('.component-row');
+      const components = Array.from(compRows).map(row => ({
+        name: row.querySelector('.comp-name').value,
+        qty: row.querySelector('.comp-qty').value,
+        sector: row.querySelector('.comp-sector').value
+      }));
+
+      const modelData = { id, name, sizes, batch, matrices, notes, components };
+
+      const existingIndex = models.findIndex(m => m.id === id);
+      if (existingIndex > -1) {
+        models[existingIndex] = modelData;
+      } else {
+        models.push(modelData);
+      }
+
+      saveState();
+      closeModelModal();
+      renderContent();
+    }
+
+    function editModel(id) {
+      openModelModal(id);
+    }
+
+    // Sector Management
+    function openSectorModal() {
+      document.getElementById('sectorModal').classList.add('active');
+    }
+
+    function closeSectorModal() {
+      document.getElementById('sectorModal').classList.remove('active');
+    }
+
+    function saveNewSector(e) {
+      e.preventDefault();
+      const name = document.getElementById('sectorNameInput').value;
+      const desc = document.getElementById('sectorDescInput').value;
+      const id = name.toLowerCase().replace(/[^a-z0-9]/g, '');
+
+      sectors.splice(sectors.length - 1, 0, { id, name, icon: '🛠️', desc });
+      saveState();
+      closeSectorModal();
+      renderTabs();
+      renderContent();
+    }
+
+    function deleteSector(id) {
+      if (confirm('Tem certeza que deseja excluir este setor?')) {
+        sectors = sectors.filter(s => s.id !== id);
+        saveState();
+        renderTabs();
+        renderContent();
+      }
+    }
+
+    function updatePasswords() {
+      passwords.admin = document.getElementById('newAdminPass').value;
+      passwords.autorizado = document.getElementById('newAuthPass').value;
+      saveState();
+      alert('Senhas atualizadas com sucesso!');
+    }
+
+    // Initialization
+    renderTabs();
+    renderContent();
+  </script>
+</body>
+</html>
